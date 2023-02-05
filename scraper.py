@@ -44,28 +44,23 @@ def scrap_from_html(url, page_num):
     price_str = first_truck_soup.find('div', class_='d-price sc-font-xl').text
     price_int = int(re.sub(r'[^\d.]', '', price_str).replace('.', ''))
 
-    try:
-        is_mileage = first_truck_soup.find(class_='itemlbl', string='Kilometer').next_sibling.next_sibling.text
-    except:
-        mileage_int = 0
-    else:
-        mileage_str = is_mileage
+    if first_truck_soup.find(class_='itemlbl', string='Kilometer') is not None:
+        mileage_str = first_truck_soup.find(class_='itemlbl', string='Kilometer').next_sibling.next_sibling.text
         mileage_int = int(re.sub(r'[^\d.]', '', mileage_str).replace('.', ''))
+    else:
+        mileage_int = 0
 
-    try:
-        is_color = first_truck_soup.find('div', string='Farbe').next_sibling.next_sibling.text
-    except:
+    if first_truck_soup.find('div', string='Farbe') is not None:
+        color = first_truck_soup.find('div', string='Farbe').next_sibling.next_sibling.text
+    else:
         color = ''
-    else:
-        color = is_color
 
-    try:
+    if first_truck_soup.find('div', string='Leistung') is not None:
         is_power = first_truck_soup.find('div', string='Leistung').next_sibling.next_sibling.text
-    except:
-        power_int = 0
-    else:
         power_str = is_power
         power_int = int(re.match(r'(\d+).kW', power_str).group(1))
+    else:
+        power_int = 0
 
     desc_title = first_truck_soup.find(attrs={'data-item-name': "description"}).h3.text
     desc_main = first_truck_soup.find('div', attrs={'class': 'short-description'}).text
