@@ -6,18 +6,9 @@ import shutil
 import json
 
 
-data_folder_path = 'data'
-if not os.path.isdir(data_folder_path):
-    os.makedirs(data_folder_path)
+def scrap_from_html(url, page_num):
 
-result = []
-
-pages = ['1', '2', '3', '4']
-for page in pages:
-
-    url = 'https://www.truckscout24.de/transporter/gebraucht/kuehl-iso-frischdienst/renault?currentpage=' + page
-
-    page = requests.get(url)
+    page = requests.get(f'{url}{page_num}')
 
     soup = BeautifulSoup(page.content, 'html.parser')
     first_truck = soup.find('div', class_='ls-elem ls-elem-gap')
@@ -37,15 +28,16 @@ for page in pages:
 
     gallery = first_truck_soup.find_all('div', attrs={'class': 'gallery-picture'})
     for i in range(3):
-        url = gallery[i].find('img')['data-src']
-        response = requests.get(url, stream=True)
-        picture_path = os.path.join(truck_gallery_folder, str(i) + '.jpg')
-        if response.status_code == 200:
-            with open(picture_path, 'wb') as f:
-                shutil.copyfileobj(response.raw, f)
-            print('Image sucessfully downloaded')
-        else:
-            print('Image couldn\'t be retrieved')
+        url_img = gallery[i].find('img')['data-src']
+        if url_img is not None:
+            response = requests.get(url_img, stream=True)
+            picture_path = os.path.join(truck_gallery_folder, str(i) + '.jpg')
+            if response.status_code == 200:
+                with open(picture_path, 'wb') as f:
+                    shutil.copyfileobj(response.raw, f)
+                print('Image sucessfully downloaded')
+            else:
+                print('Image couldn\'t be retrieved')
 
     title = first_truck_soup.find('h1').text
 
@@ -85,10 +77,26 @@ for page in pages:
                   'mileage': mileage_int, 'color': color,
                   'power': power_int, 'description': description}
 
-    result.append(truck_data)
+    return truck_data
 
-json_file = 'data.json'
-json_file_path = os.path.join(data_folder_path, json_file)
-with open(json_file_path, 'w', encoding='utf-8') as f:
-    json.dump(result, f, indent=8, ensure_ascii=False)
-print('json created')
+
+if __name__ == "__main__":
+
+    extract_url = 'https://www.truckscout24.de/transporter/gebraucht/kuehl-iso-frischdienst/renault?currentpage='
+
+    data_folder_path = 'data'
+    if not os.path.isdir(data_folder_path):
+        os.makedirs(data_folder_path)
+
+    result = []
+
+    pages = ['1', '2', '3', '4']
+    for page_number in pages:
+        res = scrap_from_html(extract_url, page_number)
+        result.append(res)
+
+    json_file = 'data.json'
+    json_file_path = os.path.join(data_folder_path, json_file)
+    with open(json_file_path, 'w', encoding='utf-8') as f:
+        json.dump(result, f, indent=8, ensure_ascii=False)
+    print('json created')
